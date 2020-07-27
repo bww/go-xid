@@ -42,11 +42,6 @@ var IDs = []IDParts{
 	},
 }
 
-// var testGens = []*Generator{
-// 	NewGenerator(Sortable),
-// 	NewGenerator(Distributed),
-// }
-
 func TestIDPartsExtraction(t *testing.T) {
 	for i, v := range IDs {
 		t.Run(fmt.Sprintf("Test%d", i), func(t *testing.T) {
