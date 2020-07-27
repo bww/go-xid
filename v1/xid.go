@@ -166,10 +166,10 @@ func (g *Generator) NewWithTime(t time.Time) ID {
 		id[10] = byte(ctr >> 8)
 		id[11] = byte(ctr)
 	} else {
-		// Counter, 3 bytes, big endian
-		id[0] = byte(ctr >> 16)
+		// Counter, 3 bytes, little endian
+		id[0] = byte(ctr)
 		id[1] = byte(ctr >> 8)
-		id[2] = byte(ctr)
+		id[2] = byte(ctr >> 16)
 		// Machine, first 3 bytes of md5(hostname)
 		id[3] = machineID[0]
 		id[4] = machineID[1]
@@ -237,10 +237,11 @@ func (g *Generator) Counter(id ID) int32 {
 	var b []byte
 	if g.mode == Sortable {
 		b = id[9:12]
+		return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])) // Counter is stored as big-endian 3-byte value
 	} else {
 		b = id[0:3]
+		return int32(uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16) // Counter is stored as little-endian 3-byte value
 	}
-	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])) // Counter is stored as big-endian 3-byte value
 }
 
 // New generates a globally unique ID
