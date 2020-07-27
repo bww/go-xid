@@ -166,17 +166,17 @@ func (g *Generator) NewWithTime(t time.Time) ID {
 		id[10] = byte(ctr >> 8)
 		id[11] = byte(ctr)
 	} else {
-		// Machine, first 3 bytes of md5(hostname)
-		id[0] = machineID[0]
-		id[1] = machineID[1]
-		id[2] = machineID[2]
-		// PID, 2 bytes, specs don't specify endianness, but we use big endian.
-		id[3] = byte(pid >> 8)
-		id[4] = byte(pid)
 		// Counter, 3 bytes, big endian
-		id[5] = byte(ctr >> 16)
-		id[6] = byte(ctr >> 8)
-		id[7] = byte(ctr)
+		id[0] = byte(ctr >> 16)
+		id[1] = byte(ctr >> 8)
+		id[2] = byte(ctr)
+		// Machine, first 3 bytes of md5(hostname)
+		id[3] = machineID[0]
+		id[4] = machineID[1]
+		id[5] = machineID[2]
+		// PID, 2 bytes, specs don't specify endianness, but we use big endian.
+		id[6] = byte(pid >> 8)
+		id[7] = byte(pid)
 		// Timestamp, 4 bytes, big endian
 		binary.BigEndian.PutUint32(id[8:], uint32(t.Unix()))
 	}
@@ -219,7 +219,7 @@ func (g *Generator) Machine(id ID) []byte {
 	if g.mode == Sortable {
 		return id[4:7]
 	} else {
-		return id[0:3]
+		return id[3:6]
 	}
 }
 
@@ -228,7 +228,7 @@ func (g *Generator) PID(id ID) uint16 {
 	if g.mode == Sortable {
 		return binary.BigEndian.Uint16(id[7:9])
 	} else {
-		return binary.BigEndian.Uint16(id[3:5])
+		return binary.BigEndian.Uint16(id[6:8])
 	}
 }
 
@@ -238,7 +238,7 @@ func (g *Generator) Counter(id ID) int32 {
 	if g.mode == Sortable {
 		b = id[9:12]
 	} else {
-		b = id[5:8]
+		b = id[0:3]
 	}
 	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])) // Counter is stored as big-endian 3-byte value
 }
