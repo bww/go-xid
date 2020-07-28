@@ -81,13 +81,13 @@ var (
 	// the base32 encoder we use; we use the extended-hex variant with no padding
 	encoder = base32.HexEncoding.WithPadding(-1)
 	// default generator
-	dgen = NewGenerator(Sortable)
+	dgen = NewGenerator(Sequential)
 )
 
 type Mode int
 
 const (
-	Sortable Mode = iota
+	Sequential Mode = iota
 	Distributed
 )
 
@@ -151,7 +151,7 @@ func (g *Generator) NewWithTime(t time.Time) ID {
 	var id ID
 	// Increment our counter
 	ctr := atomic.AddUint32(&objectIDCounter, 1)
-	if g.mode == Sortable {
+	if g.mode == Sequential {
 		// Timestamp, 4 bytes, big endian
 		binary.BigEndian.PutUint32(id[:], uint32(t.Unix()))
 		// Machine, first 3 bytes of md5(hostname)
@@ -206,7 +206,7 @@ func (g *Generator) FromBytes(b []byte) (ID, error) {
 // Time returns the timestamp part of the id. It's a runtime error to call this method with an invalid id.
 func (g *Generator) Time(id ID) time.Time {
 	var secs int64
-	if g.mode == Sortable {
+	if g.mode == Sequential {
 		secs = int64(binary.BigEndian.Uint32(id[0:4]))
 	} else {
 		secs = int64(binary.BigEndian.Uint32(id[8:]))
@@ -216,7 +216,7 @@ func (g *Generator) Time(id ID) time.Time {
 
 // Machine returns the 3-byte machine id part of the id. It's a runtime error to call this method with an invalid id.
 func (g *Generator) Machine(id ID) []byte {
-	if g.mode == Sortable {
+	if g.mode == Sequential {
 		return id[4:7]
 	} else {
 		return id[3:6]
@@ -225,7 +225,7 @@ func (g *Generator) Machine(id ID) []byte {
 
 // PID returns the process id part of the id. It's a runtime error to call this method with an invalid id.
 func (g *Generator) PID(id ID) uint16 {
-	if g.mode == Sortable {
+	if g.mode == Sequential {
 		return binary.BigEndian.Uint16(id[7:9])
 	} else {
 		return binary.BigEndian.Uint16(id[6:8])
@@ -235,7 +235,7 @@ func (g *Generator) PID(id ID) uint16 {
 // Counter returns the incrementing value part of the id. It's a runtime error to call this method with an invalid id.
 func (g *Generator) Counter(id ID) int32 {
 	var b []byte
-	if g.mode == Sortable {
+	if g.mode == Sequential {
 		b = id[9:12]
 		return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])) // Counter is stored as big-endian 3-byte value
 	} else {
