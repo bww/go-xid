@@ -329,12 +329,18 @@ func (id *ID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// UnmarshalJSON implements encoding/json Unmarshaler interface
+// UnmarshalJSON implements encoding/json Unmarshaler interface, which specifically
+// allows for the literal 'null' to represent the zero value.
 func (id *ID) UnmarshalJSON(b []byte) error {
-	s := string(b)
-	if s == "null" {
+	if string(b) == "null" {
 		*id = nilID
 		return nil
+	}
+	// empty string '""' is the smallest possible processable input since are being
+	// (maybe unnecessarily) clever here and avoiding more expensive string parsing
+	// in encoding/json
+	if len(b) < 2 {
+		return ErrInvalidID
 	}
 	return id.UnmarshalText(b[1 : len(b)-1])
 }
